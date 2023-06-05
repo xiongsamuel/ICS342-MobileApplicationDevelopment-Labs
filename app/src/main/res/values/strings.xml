@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">Labs</string>
+    <string name="button_text">Show text</string>
+    <string name="entered_text">Entered text</string>
+    <string name="okay">Okay</string>
+    <string name="error_title">Error</string>
+    <string name="error_message">Enter some text in the text field.</string>
+    <string name="hint_text">Enter some text</string>
 </resources>
