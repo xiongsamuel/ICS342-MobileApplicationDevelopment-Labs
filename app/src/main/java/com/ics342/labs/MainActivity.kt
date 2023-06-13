@@ -119,7 +119,6 @@ fun items(count: List<DataItem>, itemContent: @Composable() (LazyItemScope.(inde
     TODO("Not yet implemented")
 }
 
-
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
