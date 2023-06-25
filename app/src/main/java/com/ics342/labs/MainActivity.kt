@@ -3,19 +3,29 @@ package com.ics342.labs
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -73,7 +83,6 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 
 @Composable
 fun DataItemView(dataItem: DataItem) {
-    /* Create the view for the data item here. */
     Column(
         modifier = Modifier.padding(16.dp)
     ) {
@@ -83,11 +92,13 @@ fun DataItemView(dataItem: DataItem) {
             Text(
                 text = "ID: ${dataItem.id}",
                 fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
+                fontSize = 16.sp,
+                modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.width(10.dp))
             Text(
                 text = dataItem.name,
+                fontWeight = FontWeight.Bold,
                 fontSize = 16.sp
             )
         }
@@ -98,31 +109,48 @@ fun DataItemView(dataItem: DataItem) {
             modifier = Modifier.padding(start = 16.dp)
         )
     }
-}
 
 
 
-@Composable
-fun DataItemList(dataItems: List<DataItem>) =
-    /* Create the list here. This function will call DataItemView() */
-    LazyColumn {
-        items(dataItems){ dataItem ->
-            DataItemView(dataItem = dataItem)
+    @Composable
+    fun DataItemList(dataItems: List<DataItem>) =
+        LazyColumn {
+                items(dataItems.size) { dataItem ->
+                    var showDialog by remember { mutableStateOf(false) }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight()
+                            .clickable(onClick = { showDialog = true })
+                    ) {
+                        DataItemView(dataItems[dataItem])
+                    }
+
+                    if (showDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showDialog = false },
+                            title = { Text(text = "${dataItems[dataItem].name}") },
+                            text = { Text("${dataItems[dataItem].description}") },
+                            confirmButton = {
+                                Button(
+                                    onClick = {
+                                        showDialog = false
+                                    }) {
+                                    Text("Okay")
+                                }
+                            },
+                        )
+                    }
+                }
+            }
         }
-    }
 
-fun DataItemView(dataItem: Int) {
 
-}
-
-fun items(count: List<DataItem>, itemContent: @Composable() (LazyItemScope.(index: Int) -> Unit)) {
-    TODO("Not yet implemented")
-}
-
-@Preview(showBackground = true)
+@Preview
 @Composable
 fun GreetingPreview() {
     LabsTheme {
         Greeting("Android")
     }
 }
+
