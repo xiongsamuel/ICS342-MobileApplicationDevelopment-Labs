@@ -4,141 +4,154 @@ package com.ics342.labs
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ics342.labs.data.DataItem
 import com.ics342.labs.ui.theme.LabsTheme
 
-class MainActivity() : ComponentActivity(){
+private val dataItems = listOf(
+    DataItem(1, "Item 1", "Description 1"),
+    DataItem(2, "Item 2", "Description 2"),
+    DataItem(3, "Item 3", "Description 3"),
+    DataItem(4, "Item 4", "Description 4"),
+    DataItem(5, "Item 5", "Description 5"),
+    DataItem(6, "Item 6", "Description 6"),
+    DataItem(7, "Item 7", "Description 7"),
+    DataItem(8, "Item 8", "Description 8"),
+    DataItem(9, "Item 9", "Description 9"),
+    DataItem(10, "Item 10", "Description 10"),
+    DataItem(11, "Item 11", "Description 11"),
+    DataItem(12, "Item 12", "Description 12"),
+    DataItem(13, "Item 13", "Description 13"),
+    DataItem(14, "Item 14", "Description 14"),
+    DataItem(15, "Item 15", "Description 15"),
+    DataItem(16, "Item 16", "Description 16"),
+    DataItem(17, "Item 17", "Description 17"),
+    DataItem(18, "Item 18", "Description 18"),
+    DataItem(19, "Item 19", "Description 19"),
+    DataItem(20, "Item 20", "Description 20"),
+)
 
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             LabsTheme {
                 // A surface container using the 'background' color from the theme
+                DataItemList(dataItems)
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    myWeatherApp()
+                    Greeting("Android")
                 }
             }
         }
-    }
-
-    @Composable
-    fun myWeatherApp() {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.Start
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.Yellow)
-                    .padding(16.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.weatherApp_name),
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.align(Alignment.CenterStart)
-                )
-            }
-            Spacer(modifier = Modifier.height(15.dp))
+        @Composable
+        fun Greeting(name: String, modifier: Modifier = Modifier) {
             Text(
-                text = stringResource(R.string.location),
-                style = MaterialTheme.typography.bodyMedium,
-                fontSize = 18.sp,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-
+                text = "Hello $name!",
+                modifier = modifier
             )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
+        }
+        @Composable
+        fun DataItemView(dataItem: DataItem) {
+            Column(
+                modifier = Modifier.padding(16.dp)
             ) {
-                Column(
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.weight(1f)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = stringResource(R.string.temperature),
-                        style = MaterialTheme.typography.headlineLarge,
+                        text = "ID: ${dataItem.id}",
                         fontWeight = FontWeight.Bold,
-                        fontSize = 85.sp
+                        fontSize = 16.sp,
+                        modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.height(5.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = stringResource(R.string.prediction),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontSize = 15.sp
+                        text = dataItem.name,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
                     )
                 }
-                Spacer(modifier = Modifier.height(30.dp))
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Image(
-                        painter = painterResource(R.drawable.icon),
-                        contentDescription = null,
-                        modifier = Modifier.size(150.dp)
-                    )
-                }
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = dataItem.description,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(start = 16.dp)
+                )
             }
-            Spacer(modifier = Modifier.height(30.dp))
-            Text(
-                text = stringResource(R.string.lowTemp),
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = 18.sp
-            )
-            Text(
-                text = stringResource(R.string.highTemp),
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = 18.sp
-            )
-            Text(
-                text = stringResource(R.string.humidity),
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = 18.sp
-            )
-            Text(
-                text = stringResource(R.string.pressure),
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = 18.sp
-            )
-        }
-    }
 
 
-    @Preview(showBackground = true)
-    @Composable
-    fun GreetingPreview() {
-        LabsTheme {
-            myWeatherApp()
+
+            @Composable
+            fun DataItemList(dataItems: List<DataItem>) =
+                LazyColumn {
+                    items(dataItems.size) { dataItem ->
+                        var showDialog by remember { mutableStateOf(false) }
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight()
+                                .clickable(onClick = { showDialog = true })
+                        ) {
+                            DataItemView(dataItems[dataItem])
+                        }
+
+                        if (showDialog) {
+                            AlertDialog(
+                                onDismissRequest = { showDialog = false },
+                                title = { Text(text = "${dataItems[dataItem].name}") },
+                                text = { Text("${dataItems[dataItem].description}") },
+                                confirmButton = {
+                                    Button(
+                                        onClick = {
+                                            showDialog = false
+                                        }) {
+                                        Text("Okay")
+                                    }
+                                },
+                            )
+                        }
+                    }
+                }
         }
-    }
-}
+
+
+        @Preview
+        @Composable
+        fun GreetingPreview() {
+            LabsTheme {
+                Greeting("Android")
+            }
+        }
+
+
+
