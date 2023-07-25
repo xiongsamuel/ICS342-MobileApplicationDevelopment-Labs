@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
@@ -34,16 +35,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.ics342.labs.data.DayForecast
 import com.ics342.labs.data.ForecastTemp
+import com.squareup.moshi.Moshi
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.components.SingletonComponent
+import retrofit2.Retrofit
+import retrofit2.converter.moshi.MoshiConverterFactory
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import javax.inject.Inject
 
 private val ForecastItems = listOf(
     DayForecast(
@@ -349,7 +360,6 @@ class MainActivity() : ComponentActivity() {
 
     @Composable
     fun titleBar(title: String) {
-        //Template to create title bar
         Column(
             modifier = Modifier
                 .background(Color.Blue)
@@ -367,7 +377,6 @@ class MainActivity() : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     @Composable
     fun ForecastDate(date: Long): String {
-        //Formatting long to date
         val instant = Instant.ofEpochSecond(date)
         val dateTime = LocalDateTime.ofInstant(instant, ZoneOffset.UTC)
         val formatter = DateTimeFormatter.ofPattern("MMM dd")
@@ -382,5 +391,43 @@ class MainActivity() : ComponentActivity() {
         val dateTime = LocalDateTime.ofInstant(instant, ZoneOffset.UTC)
         val formatter = DateTimeFormatter.ofPattern("HH:mm a")
         return dateTime.format(formatter)
+    }
+
+    @Composable
+    fun CurrentConditionsView(
+        viewModel: CurrentConditionsViewModel = hiltViewModel()
+    ) {
+        val weatherData = viewModel.currentData.observeAsState()
+    }
+    @Composable
+    fun ForecastView(
+        viewModel: ForecastViewModel = hiltViewModel()
+    ) {
+        val weatherData = viewModel.forecastData.observeAsState()
+    }
+
+    @Module
+    @InstallIn(SingletonComponent::class)
+    object MyAppModule {
+
+        @Provides
+        fun provideMoshi(): Moshi {
+            return Moshi.Builder()
+                .build()
+        }
+
+        @Provides
+        fun provideRetrofit(moshi: Moshi): Retrofit {
+            return Retrofit.Builder()
+                .baseUrl("https://openweathermap.org/current")
+                .baseUrl("https://openweathermap.org/forecast16")
+                .addConverterFactory(MoshiConverterFactory.create(moshi))
+                .build()
+        }
+
+        @Provides
+        fun provideApiService(retrofit: Retrofit): ApiService {
+            return retrofit.create(ApiService::class.java)
+        }
     }
 }
