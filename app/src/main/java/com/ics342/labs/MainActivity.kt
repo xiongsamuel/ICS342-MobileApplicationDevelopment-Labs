@@ -62,7 +62,8 @@ class MainActivity : ComponentActivity() {
 }
 
 fun startNotificationService(context: Context) {
-    TODO("Start the Notification Service")
+    val intent = Intent(context, NotificationService::class.java)
+    ContextCompat.startForegroundService(context, intent)
 }
 
 private fun checkOrRequestPermission(
