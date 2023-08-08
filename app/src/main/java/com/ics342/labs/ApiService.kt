@@ -1,10 +1,18 @@
 package com.ics342.labs
 
 import retrofit2.http.GET
+import retrofit2.http.Query
 
 interface ApiService {
-    @GET("/path/to/data")
-    suspend fun getWeatherData(): WeatherData
+    @GET("weather")
+    suspend fun getCurrentWeather(
+        @Query("zip") zipcode: String,
+        @Query("appid") apiKey: String
+    ): WeatherData
 
-    suspend fun getForecastData(): List<Forecast>
+    @GET("forecast/daily")
+    suspend fun getForecast(
+        @Query("zip") zipcode: String,
+        @Query("appid") apiKey: String
+    ): Forecast
 }

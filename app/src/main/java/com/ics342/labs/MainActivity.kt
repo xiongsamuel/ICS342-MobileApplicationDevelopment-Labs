@@ -1,10 +1,12 @@
 package com.ics342.labs
 
 
+import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.Image
@@ -17,15 +19,28 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
@@ -37,16 +52,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
 import com.ics342.labs.data.DayForecast
 import com.ics342.labs.data.ForecastTemp
 import com.squareup.moshi.Moshi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.components.SingletonComponent
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
@@ -54,7 +70,6 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import javax.inject.Inject
 
 private val ForecastItems = listOf(
     DayForecast(
@@ -188,7 +203,8 @@ private val ForecastItems = listOf(
 )
 
 class MainActivity() : ComponentActivity() {
-
+    private val currentConditionsViewModel: CurrentConditionsViewModel by viewModels()
+    private val forecastViewModel: ForecastViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -197,6 +213,7 @@ class MainActivity() : ComponentActivity() {
                 this.composable("HomeScreen") {
                     myWeatherApp(navController)
                 }
+
             }
         }
     }
@@ -304,9 +321,11 @@ class MainActivity() : ComponentActivity() {
         }
     }
 
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+    @OptIn(ExperimentalMaterial3Api::class)
     @RequiresApi(Build.VERSION_CODES.O)
     @Composable
-    fun ForecastScreen(ForecastItems: DayForecast) {
+    fun ForecastScreen(ForecastItems: NavHostController) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Image(
                 painter = painterResource(id = R.drawable.icon),
@@ -343,6 +362,68 @@ class MainActivity() : ComponentActivity() {
             }
         }
         Spacer(modifier = Modifier.size(15.dp))
+        val forecastItems = viewModel.forecast.collectAsState(null)
+
+        val zipCode = remember {
+            val backStackEntry = navController.currentBackStackEntry
+            backStackEntry?.arguments?.getString("zipCode") ?: ""
+        }
+
+        LaunchedEffect(Unit) {
+            fun isValidZipCode(zipCode: String): Boolean {
+                return zipCode.matches(Regex("^\\d{5}$"))
+            }
+            if (isValidZipCode(zipCode)) {
+                viewModel.fetchForecast(zipCode, "YOUR_API_KEY")
+            } else {
+                println("Invalid ZIP code: $zipCode")
+            }
+        }
+
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    modifier = Modifier
+                        .height(40.dp)
+                        .fillMaxWidth(),
+                    title = {
+                        Text(
+                            text = "Forecast",
+                            fontSize = 18.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 6.dp)
+                                .offset(x = (-8).dp)
+                        )
+                    },
+                    colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = Color.Gray)
+                )
+            },
+            content = {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 70.dp)
+                        .offset(y = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    itemsIndexed(listOf(forecastItems)) { _, forecastItem ->
+                        ForecastItemView(forecastItem = forecastItem)
+                    }
+                }
+            },
+            bottomBar = {
+                Button(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp, horizontal = 32.dp),
+                    onClick = { navController.navigate("weather") }
+                ) {
+                    Text(text = "Back to Main")
+                }
+            }
+        )
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -386,7 +467,6 @@ class MainActivity() : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     @Composable
     fun ForecastTime(timestamp: Long): String {
-        //Formatting long to time
         val instant = Instant.ofEpochMilli(timestamp)
         val dateTime = LocalDateTime.ofInstant(instant, ZoneOffset.UTC)
         val formatter = DateTimeFormatter.ofPattern("HH:mm a")
@@ -395,7 +475,7 @@ class MainActivity() : ComponentActivity() {
 
     @Composable
     fun CurrentConditionsView(
-        viewModel: CurrentConditionsViewModel = hiltViewModel()
+        viewModel: NavHostController = hiltViewModel()
     ) {
         val weatherData = viewModel.currentData.observeAsState()
     }
@@ -429,5 +509,144 @@ class MainActivity() : ComponentActivity() {
         fun provideApiService(retrofit: Retrofit): ApiService {
             return retrofit.create(ApiService::class.java)
         }
+    }
+    @RequiresApi(Build.VERSION_CODES.O)
+    @Composable
+    fun WeatherAppNavigation(
+        currentConditionsViewModel: CurrentConditionsViewModel,
+        forecastViewModel: ForecastViewModel
+    ) {
+        val navController = rememberNavController()
+        NavHost(navController, startDestination = "weather") {
+            composable("weather") { CurrentConditionsView(navController, currentConditionsViewModel) }
+            composable("forecast") { ForecastScreen(navController, forecastViewModel) }
+        }
+    }
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
+    @Composable
+    fun CurrentConditionsView(
+        navController: NavHostController,
+        viewModel: CurrentConditionsViewModel
+    ) {
+        val currentWeather = viewModel.currentWeather.collectAsState(null)
+
+        LaunchedEffect(Unit) {
+            viewModel.fetchCurrentWeather("55125", "YOUR_API_KEY")
+        }
+
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    modifier = Modifier
+                        .height(40.dp)
+                        .fillMaxWidth(),
+                    title = {
+                        Text(
+                            text = "Weather App",
+                            fontSize = 18.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 6.dp)
+                                .offset(x = (-8).dp)
+                        )
+                    },
+                    colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = Gray)
+                )
+            }
+        ) {
+            var zipCode by remember { mutableStateOf("") }
+            Column {
+                TextField(
+                    value = zipCode,
+                    onValueChange = { newZipCode ->
+                        zipCode = newZipCode
+                        viewModel.updateZipCode(newZipCode)
+                    },
+                    label = { Text("Enter ZIP Code") }
+                )
+
+                Button(
+                    onClick = {
+                        val zipCodeResult = viewModel.zipCode.value
+                        if (isValidZipCode(zipCodeResult)) {
+                            viewModel.fetchCurrentWeather(
+                                zipCodeResult,
+                                "YOUR_API_KEY"
+                            )
+                        } else {
+                            println("Invalid ZIP code: $zipCode")
+                        }
+                    },
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .align(Alignment.CenterHorizontally)
+                ) {
+                    Text(text = "Search")
+                }
+            }
+            currentWeather.value?.let { weather ->
+                Column {
+                    Text(text = "Temperature: ${String.format("%.2f", weather.highTemp)}\u00B0")
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(it.calculateTopPadding())
+                    ) {
+                        Text(
+                            text = weather.name,
+                            fontSize = 22.sp,
+                            modifier = Modifier
+                                .padding(top = 12.dp)
+                                .fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 20.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = weather.temperature.temp.toString(),
+                                fontSize = 60.sp,
+                            )
+                            WeatherConditionIcon(url = weather.iconUrl)
+                        }
+                        Text(
+                            text = weather.temperature.feelsLike.toString(),
+                            modifier = Modifier
+                                .offset(y = (-40).dp)
+                                .padding(start = 34.dp)
+                        )
+                        Button(
+                            onClick = {
+                                if (isValidZipCode(zipCode)) {
+                                    viewModel.fetchCurrentWeather(
+                                        zipCode,
+                                        "YOUR_API_KEY"
+                                    )
+                                    navController.navigate("forecast/$zipCode")
+                                } else {
+                                    println("Invalid ZIP code: $zipCode")
+                                }
+                            },
+                            modifier = Modifier
+                                .padding(top = 16.dp)
+                                .align(Alignment.CenterHorizontally)
+                        ) {
+                            Text(text = "Forecast")
+                        }
+                    }
+                }
+            } ?: run {
+                Text(text = "Loading...")
+            }
+        }
+    }
+    @Composable
+    fun WeatherConditionIcon(
+        url: String
+    ) {
+        AsyncImage(model = url, contentDescription = "")
     }
 }
